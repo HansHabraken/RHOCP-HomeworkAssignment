@@ -158,6 +158,8 @@ openshift_hosted_router_replicas=2
 openshift_hosted_router_selector='env=infra'
 #openshift_hosted_router_certificate={"certfile": "/path/to/router.crt", "keyfile": "/path/to/router.key", "cafile": "/path/to/router-ca.crt"}
 
+openshift_enable_unsupported_configurations=True
+
 openshift_hosted_registry_replicas=1
 openshift_hosted_registry_selector='env=infra'
 
@@ -204,33 +206,34 @@ nodes
 nfs
 
 [lb]
-loadbalancer1.$GUID.internal host_zone=eu-central-1c
+loadbalancer1.$GUID.internal
 
 [masters]
-master3.$GUID.internal host_zone=eu-central-1c
-master2.$GUID.internal host_zone=eu-central-1c
-master1.$GUID.internal host_zone=eu-central-1c
+master3.$GUID.internal
+master2.$GUID.internal
+master1.$GUID.internal
 
 [etcd]
-master3.$GUID.internal host_zone=eu-central-1c
-master2.$GUID.internal host_zone=eu-central-1c
-master1.$GUID.internal host_zone=eu-central-1c
+master3.$GUID.internal
+master2.$GUID.internal
+master1.$GUID.internal
 
 
 [nodes]
 ## These are the masters
-master3.$GUID.internal openshift_hostname=master3.$GUID.internal openshift_node_labels="{'logging':'true','openshift_schedulable':'False','cluster': '$GUID', 'zone': 'eu-central-1c'}"
-master2.$GUID.internal openshift_hostname=master2.$GUID.internal openshift_node_labels="{'logging':'true','openshift_schedulable':'False','cluster': '$GUID', 'zone': 'eu-central-1c'}"
-master1.$GUID.internal openshift_hostname=master1.$GUID.internal openshift_node_labels="{'logging':'true','openshift_schedulable':'False','cluster': '$GUID', 'zone': 'eu-central-1c'}"
+master1.$GUID.internal openshift_hostname=master1.$GUID.internal  openshift_node_labels="{'env': 'master', 'cluster': '$GUID'}"
+master2.$GUID.internal openshift_hostname=master2.$GUID.internal  openshift_node_labels="{'env': 'master', 'cluster': '$GUID'}"
+master3.$GUID.internal openshift_hostname=master3.$GUID.internal  openshift_node_labels="{'env': 'master', 'cluster': '$GUID'}"
 
 ## These are infranodes
-infranode1.$GUID.internal openshift_hostname=infranode1.$GUID.internal  openshift_node_labels="{'logging':'true','cluster': '$GUID', 'env':'infra', 'zone': 'eu-central-1c'}"
-infranode2.$GUID.internal openshift_hostname=infranode2.$GUID.internal  openshift_node_labels="{'logging':'true','cluster': '$GUID', 'env':'infra', 'zone': 'eu-central-1c'}"
+infranode1.$GUID.internal openshift_hostname=infranode1.$GUID.internal  openshift_node_labels="{'env':'infra', 'cluster': '$GUID'}"
+infranode2.$GUID.internal openshift_hostname=infranode2.$GUID.internal  openshift_node_labels="{'env':'infra', 'cluster': '$GUID'}"
 
 ## These are regular nodes
-node2.$GUID.internal openshift_hostname=node2.$GUID.internal  openshift_node_labels="{'logging':'true','cluster': '$GUID', 'env':'app', 'zone': 'eu-central-1c'}"
-node3.$GUID.internal openshift_hostname=node3.$GUID.internal  openshift_node_labels="{'logging':'true','cluster': '$GUID', 'env':'app', 'zone': 'eu-central-1c'}"
-node1.$GUID.internal openshift_hostname=node1.$GUID.internal  openshift_node_labels="{'logging':'true','cluster': '$GUID', 'env':'app', 'zone': 'eu-central-1c'}"
+node1.$GUID.internal openshift_hostname=node1.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID'}"
+node2.$GUID.internal openshift_hostname=node2.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID'}"
+node3.$GUID.internal openshift_hostname=node3.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID'}"
+node4.$GUID.internal openshift_hostname=node4.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID'}"
 
 
 [nfs]
