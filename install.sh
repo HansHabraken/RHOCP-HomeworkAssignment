@@ -30,7 +30,8 @@ ansible masters[0] -b -m fetch -a "src=/root/.kube/config dest=/root/.kube/confi
 
 
 # Creating persistent volumes
-ssh support1.$GUID.internal
+
+cat << EOF > /root/presistentVolumes.sh
 sudo -i
 mkdir -p /srv/nfs/user-vols/pv{1..200}
 
@@ -43,6 +44,11 @@ done
 systemctl restart nfs-server
 exit
 exit
+
+EOF
+
+scp /root/presistentVolumes.sh support1.$GUID.internal:/home/ec2-user/presistentVolumes.sh
+ssh support1.$GUID.internal ./presistentVolumes
 
 # pv1 to pv25 with a size of 5 GB and ReadWriteOnce access mode
 export volsize="5Gi"
