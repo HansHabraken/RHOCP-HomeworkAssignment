@@ -24,4 +24,82 @@ ansible-playbook -f 20 -i ansible/hosts /usr/share/ansible/openshift-ansible/pla
 # Install openshift openshift cluster
 ansible-playbook -f 20 -i ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
 
-# After install, copy htpasswd file to master2 and master3
+# Configure Openshift Cluster
+# Run oc commands on bastion host
+ansible masters[0] -b -m fetch -a "src=/root/.kube/config dest=/root/.kube/config flat=yes"
+
+
+# Creating persistent volumes
+ssh support1.$GUID.internal
+sudo -i
+mkdir -p /srv/nfs/user-vols/pv{1..200}
+
+for pvnum in {1..50} ; do
+echo /srv/nfs/user-vols/pv${pvnum} *(rw,root_squash) >> /etc/exports.d/openshift-uservols.exports
+chown -R nfsnobody.nfsnobody  /srv/nfs
+chmod -R 777 /srv/nfs
+done
+
+systemctl restart nfs-server
+exit
+exit
+
+# pv1 to pv25 with a size of 5 GB and ReadWriteOnce access mode
+export volsize="5Gi"
+mkdir /root/pvs
+for volume in pv{1..25} ; do
+cat << EOF > /root/pvs/${volume}
+{
+  "apiVersion": "v1",
+  "kind": "PersistentVolume",
+  "metadata": {
+    "name": "${volume}"
+  },
+  "spec": {
+    "capacity": {
+        "storage": "${volsize}"
+    },
+    "accessModes": [ "ReadWriteOnce" ],
+    "nfs": {
+        "path": "/srv/nfs/user-vols/${volume}",
+        "server": "support1.${GUID}.internal"
+    },
+    "persistentVolumeReclaimPolicy": "Recycle"
+  }
+}
+EOF
+echo "Created def file for ${volume}";
+done;
+
+# pv26 to pv50 with a size of 10 GB and ReadWriteMany access mode
+export volsize="10Gi"
+for volume in pv{26..50} ; do
+cat << EOF > /root/pvs/${volume}
+{
+  "apiVersion": "v1",
+  "kind": "PersistentVolume",
+  "metadata": {
+    "name": "${volume}"
+  },
+  "spec": {
+    "capacity": {
+        "storage": "${volsize}"
+    },
+    "accessModes": [ "ReadWriteMany" ],
+    "nfs": {
+        "path": "/srv/nfs/user-vols/${volume}",
+        "server": "support1.${GUID}.internal"
+    },
+    "persistentVolumeReclaimPolicy": "Retain"
+  }
+}
+EOF
+echo "Created def file for ${volume}";
+done;
+
+cat /root/pvs/* | oc create -f -
+
+# Create tasks-dev tasks-test tasks-prod projects
+oc new-project tasks-dev --description="Development Environment" --display-name="Tasks - Dev"
+oc new-project tasks-test --description="Testing Environment" --display-name="Test - Dev"
+oc new-project tasks-prod --description="Production Environment" --display-name="Prod - Dev"
