@@ -90,5 +90,5 @@ oc project tasks-build
 oc new-app openshift-tasks
 
 # Setup buildconfig for tasks
-oc project tasks-build
+oc project cicd-dev
 oc apply -f ./scripts/tasks-bc.yaml
