@@ -18,7 +18,6 @@ spec:
         def PROD_PROJECT = 'tasks-prod'
         def BUILD_PROJECT = 'tasks-prod'
 
-
         pipeline {
           agent {
             node {
@@ -56,8 +55,6 @@ spec:
                 }
               }
             }
-            stage()
-
           }
         }
     type: JenkinsPipeline
