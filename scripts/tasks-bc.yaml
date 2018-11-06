@@ -83,6 +83,86 @@ spec:
                 }
               }
             }
+            stage ('Verify dev env') {
+              steps {
+                script {
+                  openshift.withCluster() {
+                    openshift.withProject(DEV_PROJECT) {
+                      def latestDeploymentVersion = openshift.selector('dc', "${APP_NAME}").object().status.latestVersion
+                      def rc = openshift.selector('rc', "${APP_NAME}-${latestDeploymentVersion}")
+                      rc.untilEach(1){
+                        def rcMap = it.object()
+                        return (rcMap.status.replicas.equals(rcMap.status.readyReplicas))
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            stage ('Promote to test env') {
+              steps {
+                script {
+                  openshift.withCluster() {
+                    openshift.withProject(TEST_PROJECT) {
+                      openshift.tag("${DEV_PROJECT}/${APP_NAME}:latest", "${TEST_PROJECT}/${APP_NAME}:latest")
+                      if (!openshift.selector('dc', APP_NAME).exists()) {
+                        openshift.newApp(APP_NAME)
+                        def svc = openshift.selector('svc', APP_NAME)
+                        svc.expose()
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            stage ('Verify test env') {
+              steps {
+                script {
+                  openshift.withCluster() {
+                    openshift.withProject(TEST_PROJECT) {
+                      def latestDeploymentVersion = openshift.selector('dc', "${APP_NAME}").object().status.latestVersion
+                      def rc = openshift.selector('rc', "${APP_NAME}-${latestDeploymentVersion}")
+                      rc.untilEach(1){
+                        def rcMap = it.object()
+                        return (rcMap.status.replicas.equals(rcMap.status.readyReplicas))
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            stage ('Promote to prod env') {
+              steps {
+                script {
+                  openshift.withCluster() {
+                    openshift.withProject(PROD_PROJECT) {
+                      openshift.tag("${TEST_PROJECT}/${APP_NAME}:latest", "${PROD_PROJECT}/${APP_NAME}:latest")
+                      if (!openshift.selector('dc', APP_NAME).exists()) {
+                        openshift.newApp(APP_NAME)
+                        def svc = openshift.selector('svc', APP_NAME)
+                        svc.expose()
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            stage ('Verify prod env') {
+              steps {
+                script {
+                  openshift.withCluster() {
+                    openshift.withProject(PROD_PROJECT) {
+                      def latestDeploymentVersion = openshift.selector('dc', "${APP_NAME}").object().status.latestVersion
+                      def rc = openshift.selector('rc', "${APP_NAME}-${latestDeploymentVersion}")
+                      rc.untilEach(1){
+                        def rcMap = it.object()
+                        return (rcMap.status.replicas.equals(rcMap.status.readyReplicas))
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
     type: JenkinsPipeline
