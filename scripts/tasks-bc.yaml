@@ -1,9 +1,70 @@
 kind: "BuildConfig"
 apiVersion: "v1"
 metadata:
-  name: "tasks-bc"
+  annotations:
+    pipeline.alpha.openshift.io/uses: '[{"name": "tasks", "namespace": "", "kind": "DeploymentConfig"}]'
+  labels:
+    name: tasks-bc
+  name: tasks-bc
 spec:
   strategy:
     jenkinsPipelineStrategy:
-      jenkinsfilePath: ./jenkinsfile
+      jenkinsfile: |-
+        def templatePath = 'https://github.com/OpenShiftDemos/openshift-tasks/blob/master/app-template.yaml'
+        def templateName = 'openshift-tasks'
+        def APP_NAME = 'tasks'
+        def DEV_PROJECT = 'tasks-dev'
+        def TEST_PROJECT = 'tasks-test'
+        def PROD_PROJECT = 'tasks-prod'
+        def BUILD_PROJECT = 'tasks-prod'
+
+
+        pipeline {
+          agent {
+            node {
+              label 'maven'
+            }
+          }
+          options {
+            timeout(time: 20, unit: 'MINUTES')
+          }
+          stages {
+            stage('Build') {
+              steps {
+                scripts {
+                  openshift.withCluster() {
+                    openshift.withProject(BUILD_PROJECT) {
+                      def buildConfig = openshift.selector('bc'/APP_NAME)
+                      def build = buildConfig.startBuild()
+                      build.logs(-f)
+                      }
+                  }
+                }
+              }
+            }
+            stage('Deploy to dev') {
+              steps {
+                scripts {
+                  openshift.withCluster() {
+                    openshift.withProject(BUILD_PROJECT) {
+                      def deploymentConfig = openshift.selector('dc'/APP_NAME)
+                      openshift.withProject(DEV_PROJECT) {
+                        deploymentConfig.deploy()
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            stage()
+
+          }
+        }
     type: JenkinsPipeline
+  triggers:
+  - github:
+      secret: CzgPZAZ5m2
+    type: GitHub
+  - generic:
+      secret: CzgPZAZ5m2
+type: Generic

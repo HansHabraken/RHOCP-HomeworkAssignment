@@ -86,9 +86,9 @@ oc apply -f https://raw.githubusercontent.com/OpenShiftDemos/openshift-tasks/mas
 #oc apply -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap64-image-stream.json
 
 # Deploy app on dev environment
-oc project tasks-dev
+oc project tasks-build
 oc new-app openshift-tasks
 
 # Setup buildconfig for tasks
-oc project cicd-dev
-oc apply -f ./scrips/tasks-bc.yaml
+oc project tasks-build
+oc apply -f ./scripts/tasks-bc.yaml
