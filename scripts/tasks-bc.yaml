@@ -1,0 +1,9 @@
+kind: "BuildConfig"
+apiVersion: "v1"
+metadata:
+  name: "tasks-bc"
+spec:
+  strategy:
+    jenkinsPipelineStrategy:
+      jenkinsfilePath: ./jenkinsfile
+    type: JenkinsPipeline

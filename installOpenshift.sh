@@ -1,4 +1,5 @@
 #!/bin/bash
+#oc adm policy add-cluster-role-to-user cluster-admin andrew
 
 # Get GUID and export as GUID on all hosts
 export GUID=`hostname | cut -d"." -f2`
@@ -64,9 +65,12 @@ oc new-project cicd-dev --description="pizza" --display-name="cicd-dev"
 oc new-app jenkins-persistent -p ENABLE_OAUTH=false -e JENKINS_PASSWORD=1234 -n cicd-dev
 
 oc new-project tasks-dev --description="Development Environment" --display-name="Tasks - Dev"
-oc new-project tasks-test --description="Testing Environment" --display-name="Test - Dev"
-oc new-project tasks-prod --description="Production Environment" --display-name="Prod - Dev"
+oc new-project tasks-test --description="Testing Environment" --display-name="Tasks - Test"
+oc new-project tasks-prod --description="Production Environment" --display-name="Tasks - Prod"
+oc new-project tasks-build --description="Build Environment" --display-name="Tasks- Build"
 
-oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n cicd-dev
-oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n cicd-test
-oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n cicd-prod
+# Add policy to allow jenkins to acces tasks-projects
+oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-dev
+oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-test
+oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-prod
+oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-build
