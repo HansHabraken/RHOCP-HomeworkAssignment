@@ -16,7 +16,7 @@ spec:
         def DEV_PROJECT = 'tasks-dev'
         def TEST_PROJECT = 'tasks-test'
         def PROD_PROJECT = 'tasks-prod'
-        def BUILD_PROJECT = 'tasks-prod'
+        def BUILD_PROJECT = 'tasks-build'
 
         pipeline {
           agent {
@@ -30,7 +30,7 @@ spec:
           stages {
             stage('Build') {
               steps {
-                scripts {
+                script {
                   openshift.withCluster() {
                     openshift.withProject(BUILD_PROJECT) {
                       def buildConfig = openshift.selector('bc'/APP_NAME)
@@ -43,7 +43,7 @@ spec:
             }
             stage('Deploy to dev') {
               steps {
-                scripts {
+                script {
                   openshift.withCluster() {
                     openshift.withProject(BUILD_PROJECT) {
                       def deploymentConfig = openshift.selector('dc'/APP_NAME)
