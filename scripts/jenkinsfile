@@ -1,9 +1,9 @@
-def templatePath = 'https://raw.githubusercontent.com/openshift/nodejs-ex/master/openshift/templates/nodejs-mongodb.json'
-def templateName = 'nodejs-mongodb-example'
+def templatePath = 'https://github.com/OpenShiftDemos/openshift-tasks/blob/master/app-template.yaml'
+def templateName = 'openshift-tasks'
 pipeline {
   agent {
     node {
-      label 'nodejs'
+      label 'maven'
     }
   }
   options {
