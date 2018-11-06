@@ -33,9 +33,9 @@ spec:
                 script {
                   openshift.withCluster() {
                     openshift.withProject(BUILD_PROJECT) {
-                      def buildConfig = openshift.selector('bc'/APP_NAME)
+                      def buildConfig = openshift.selector('bc', APP_NAME)
                       def build = buildConfig.startBuild()
-                      build.logs(-f)
+                      build.logs('-f')
                       }
                   }
                 }
@@ -46,7 +46,7 @@ spec:
                 script {
                   openshift.withCluster() {
                     openshift.withProject(BUILD_PROJECT) {
-                      def deploymentConfig = openshift.selector('dc'/APP_NAME)
+                      def deploymentConfig = openshift.selector('dc', APP_NAME)
                       openshift.withProject(DEV_PROJECT) {
                         deploymentConfig.deploy()
                       }
