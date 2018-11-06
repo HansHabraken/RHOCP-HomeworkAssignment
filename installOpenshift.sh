@@ -1,5 +1,6 @@
 #!/bin/bash
-#oc adm policy add-cluster-role-to-user cluster-admin andrew
+#ansible masters -b -a 'htpasswd -c -b /etc/origin/master/htpasswd admin 1234'
+#oc adm policy add-cluster-role-to-user cluster-admin admin
 
 # Get GUID and export as GUID on all hosts
 export GUID=`hostname | cut -d"." -f2`
@@ -46,10 +47,11 @@ ansible localhost -a "oc whoami"
 ansible nfs -b -m copy -a "src=scripts/create_pvs.sh dest=/root/create_support_pvs.sh"
 ansible nfs -m shell -a "sh /root/create_support_pvs.sh"
 
-ansible localhost -a "sh scrpits/create_5G_vps.sh"
-ansible localhost -a "sh scrpits/create_5G_vps.sh"
+ansible localhost -a "sh scripts/create_5G_pvs.sh"
+ansible localhost -a "sh scripts/create_10G_pvs.sh"
 
-ansible localhost -a "cat /root/pvs/* | oc create -f -"
+#ansible localhost -a "cat /root/pvs/* | oc create -f \-" #Command isn't workin: cat: invalid option -- 'f'
+cat /root/pvs/* | oc create -f \-
 
 ansible nodes -m shell -a "docker pull registry.access.redhat.com/openshift3/ose-recycler:latest"
 ansible nodes -m shell -a "docker tag registry.access.redhat.com/openshift3/ose-recycler:latest registry.access.redhat.com/openshift3/ose-recycler:v3.9.30"
@@ -74,3 +76,19 @@ oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n ta
 oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-test
 oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-prod
 oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-build
+
+# Import openshif-tasks template
+oc project openshift
+oc apply -f https://raw.githubusercontent.com/OpenShiftDemos/openshift-tasks/master/app-template.yaml
+
+# Create necessary imange stream
+#oc projeect openshift
+#oc apply -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap64-image-stream.json
+
+# Deploy app on dev environment
+oc project tasks-dev
+oc new-app openshift-tasks
+
+# Setup buildconfig for tasks
+oc project cicd-dev
+oc apply -f ./scrips/tasks-bc.yaml

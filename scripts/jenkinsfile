@@ -1,5 +1,12 @@
 def templatePath = 'https://github.com/OpenShiftDemos/openshift-tasks/blob/master/app-template.yaml'
 def templateName = 'openshift-tasks'
+def APP_NAME = 'tasks'
+def DEV_PROJECT = 'tasks-dev'
+def TEST_PROJECT = 'tasks-test'
+def PROD_PROJECT = 'tasks-prod'
+def BUILD_PROJECT = 'tasks-prod'
+
+
 pipeline {
   agent {
     node {
@@ -10,84 +17,36 @@ pipeline {
     timeout(time: 20, unit: 'MINUTES')
   }
   stages {
-    stage('preamble') {
-        steps {
-            script {
-                openshift.withCluster() {
-                    openshift.withProject() {
-                        echo "Using project: ${openshift.project()}"
-                    }
-                }
-            }
-        }
-    }
-    stage('cleanup') {
+    stage('Build') {
       steps {
-        script {
-            openshift.withCluster() {
-                openshift.withProject() {
-                  openshift.selector("all", [ template : templateName ]).delete()
-                  if (openshift.selector("secrets", templateName).exists()) {
-                    openshift.selector("secrets", templateName).delete()
-                  }
-                }
+        scripts {
+          openshift.withCluster() {
+            openshift.withProject(DEV_PROJECT) {
+              def buildConfig = openshift.selector('bc'/APP_NAME)
+              openshift.withProject(BUILD_PROJECT) {
+                def build = buildConfig.startBuild()
+                build.logs(-f)
+              }
+
             }
+          }
         }
       }
     }
-    stage('create') {
+    stage('Deploy to dev') {
       steps {
-        script {
-            openshift.withCluster() {
-                openshift.withProject() {
-                  openshift.newApp(templatePath)
-                }
+        scripts {
+          openshift.withCluster() {
+            openshift.withProject(BUILD_PROJECT) {
+              def deploymentConfig = openshift.selector('dc'/APP_NAME)
+              openshift.withProject(DEV_PROJECT) {
+                deploymentConfig.deploy()
+              }
             }
+          }
         }
       }
     }
-    stage('build') {
-      steps {
-        script {
-            openshift.withCluster() {
-                openshift.withProject() {
-                  def builds = openshift.selector("bc", templateName).related('builds')
-                  timeout(5) {
-                    builds.untilEach(1) {
-                      return (it.object().status.phase == "Complete")
-                    }
-                  }
-                }
-            }
-        }
-      }
-    }
-    stage('deploy') {
-      steps {
-        script {
-            openshift.withCluster() {
-                openshift.withProject() {
-                  def rm = openshift.selector("dc", templateName).rollout()
-                  timeout(5) {
-                    openshift.selector("dc", templateName).related('pods').untilEach(1) {
-                      return (it.object().status.phase == "Running")
-                    }
-                  }
-                }
-            }
-        }
-      }
-    }
-    stage('tag') {
-      steps {
-        script {
-            openshift.withCluster() {
-                openshift.withProject() {
-                  openshift.tag("${templateName}:latest", "${templateName}-staging:latest")
-                }
-            }
-        }
-      }
-    }
+
   }
 }
