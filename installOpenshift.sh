@@ -96,4 +96,8 @@ oc apply -f ./scripts/tasks-bc.yaml
 oc create -f scripts/limitRange.yaml -n tasks-prod
 
 # Add autoscaling on tasks-dev namespace
+oc project tasks-prod
 oc autoscale dc/tasks --min 1 --max 10 --cpu-percent=80
+
+# Apply limitRange
+oc rollout latest tasks -n tasks-prod

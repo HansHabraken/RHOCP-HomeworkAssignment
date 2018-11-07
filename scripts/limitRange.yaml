@@ -13,14 +13,14 @@ spec:
         memory: "6Mi"
     - type: "Container"
       max:
-        cpu: "2" 
-        memory: "1Gi"
+        cpu: "2"
+        memory: "2Gi"
       min:
         cpu: "100m"
         memory: "4Mi"
       default:
         cpu: "300m"
-        memory: "200Mi"
+        memory: "1Gi"
       defaultRequest:
         cpu: "200m"
         memory: "100Mi"
