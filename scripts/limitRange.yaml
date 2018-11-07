@@ -7,14 +7,14 @@ spec:
     - type: "Pod"
       max:
         cpu: "2"
-        memory: "2Gi"
+        memory: "3Gi"
       min:
         cpu: "200m"
         memory: "6Mi"
     - type: "Container"
       max:
         cpu: "2"
-        memory: "1Gi"
+        memory: "2Gi"
       min:
         cpu: "100m"
         memory: "4Mi"
