@@ -92,3 +92,8 @@ oc new-app openshift-tasks
 # Setup buildconfig for tasks
 oc project cicd-dev
 oc apply -f ./scripts/tasks-bc.yaml
+
+oc create -f scripts/limitRange.yaml -n tasks-prod
+
+# Add autoscaling on tasks-dev namespace
+oc autoscale dc/tasks --min 1 --max 10 --cpu-percent=80
