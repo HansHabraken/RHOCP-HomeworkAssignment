@@ -101,8 +101,7 @@ while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-build.ap
 
 # Add autoscaling on tasks-dev namespace
 oc set resources dc tasks --requests=cpu=100m -n tasks-prod
-#Add autoscaling template
-#oc autoscale dc/tasks --min 1 --max 10 --cpu-percent=80 -n tasks-prod
+oc create -f scripts/tasks-hpa.yaml
 
 
 # Create users for Alpha and Beta clients
