@@ -107,13 +107,16 @@ oc create -f scripts/tasks-hpa.yaml
 ansible localhost -m shell -a "sh scripts/add_users.sh"
 
 # Create groups, add user to group, add labels to groups
-ansible localhost -m shell -a "sh scripts/create_groups.sh"
+ansible localhost -a "sh scripts/create_groups.sh"
+
+# Label nodes
+oc label node node1.$GUID.internal client=alpha
+oc label node node2.$GUID.internal client=beta
+oc label node node3.$GUID.internal client=common
 
 # Setup env for alpha and beta users
-oc new-project alphacorp --node-selector='client=alpha'
-oc label alphacorp client=alpha
+oc adm new-project alphacorp-project --node-selector="client=alpha"
 oc adm policy add-role-to-group edit alphacorp -n alphacorp
 
-oc new-project bestacorp --node-selector='client=beta'
-oc label betacorp client=beta
+oc adm new-project betacorp-project --node-selector='client=beta'
 oc adm policy add-role-to-group edit betacorp -n betacorp
