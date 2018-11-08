@@ -103,9 +103,8 @@ while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-build.ap
 oc set resources dc tasks --requests=cpu=100m -n tasks-prod
 oc create -f scripts/tasks-hpa.yaml
 
-
 # Create users for Alpha and Beta clients
-ansible masters -m shell -a "sh scripts/add_user.sh"
+ansible localhost -m shell -a "sh scripts/add_users.sh"
 
 # Create groups, add user to group, add labels to groups
 ansible master -m shell -a "ss scripts/create_groups.sh"
