@@ -1,38 +1,44 @@
 #!/bin/bash
-#ansible masters -b -a 'htpasswd -c -b /etc/origin/master/htpasswd admin 1234'
-#oc adm policy add-cluster-role-to-user cluster-admin admin
 
 # Get GUID and export as GUID on all hosts
+echo "export GUID"
 export GUID=`hostname | cut -d"." -f2`
 
 # Replace $GUID variable in hosts file with correct GUID
+echo 'Replace GUID'
 sed -i "s/\$GUID/${GUID}/g" ansible/hosts
 
 ################
 #Execute checks#
 ################
-
+echo 'Execute checks'
 # Validate that all hosts are reachable
+echo 'Check: ping'
 ansible all -m ping
 
 # Validate that docker is running
+echo 'Check: docker'
 ansible hosts -a "systemctl status docker | grep Active"
-
+echo 'Check: packages'
 ansible nodes -m yum -a 'list=atomic-openshift-node'
 
 ###################
 #Install Openshift#
 ###################
+echo "Install openshift"
 
 # Execute prerequisites
+echo 'Execute prerequisistes'
 ansible-playbook -f 20 -i ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
 
 # Install openshift openshift cluster
+echo 'Install openshift'
 ansible-playbook -f 20 -i ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
 
 #####################
 #Configure Openshift#
 #####################
+echo 'Configure openshift'
 
 # Run oc commands on bastion host
 ansible masters[0] -b -m fetch -a "src=/root/.kube/config dest=/root/.kube/config flat=yes"
@@ -44,6 +50,7 @@ ansible localhost -a "oc login -u system:admin"
 ansible localhost -a "oc whoami"
 
 # Creating persistent volumes
+echo 'Creating persisten volumes'
 ansible nfs -b -m copy -a "src=scripts/create_pvs.sh dest=/root/create_support_pvs.sh"
 ansible nfs -m shell -a "sh /root/create_support_pvs.sh"
 
@@ -56,12 +63,24 @@ cat /root/pvs/* | oc create -f \-
 ansible nodes -m shell -a "docker pull registry.access.redhat.com/openshift3/ose-recycler:latest"
 ansible nodes -m shell -a "docker tag registry.access.redhat.com/openshift3/ose-recycler:latest registry.access.redhat.com/openshift3/ose-recycler:v3.9.30"
 
+# Create admin user
+echo "Creating admin user"
+ansible masters -b -a 'htpasswd -c -b /etc/origin/master/htpasswd admin 1234'
+oc adm policy add-cluster-role-to-user cluster-admin admin
+
 # Deploy test application
+echo 'Deploy test application'
 oc new-project nodejs-test --description="Nodejs Test Project" --display-name="nodejs-test"
 oc new-app nodejs-mongo-persistent
 
+
+##################
 #CI/CD - pipeline#
+##################
+echo 'Intall CI/CD - pipeline'
+
 # Create tasks-dev tasks-test tasks-prod projects
+echo "Creating projects"
 oc new-project cicd-dev --description="pizza" --display-name="cicd-dev"
 oc new-app jenkins-persistent -p ENABLE_OAUTH=false -e JENKINS_PASSWORD=1234 -n cicd-dev
 
@@ -71,12 +90,14 @@ oc new-project tasks-prod --description="Production Environment" --display-name=
 oc new-project tasks-build --description="Build Environment" --display-name="Tasks- Build"
 
 # Add policy to allow jenkins to acces tasks-projects
+echo 'Add policy'
 oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-dev
 oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-test
 oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-prod
 oc adm policy add-role-to-user edit system:serviceaccount:cicd-dev:jenkins -n tasks-build
 
-# Import openshif-tasks template
+# Import openshift-tasks template
+echo 'Import openshift-tasks template '
 oc project openshift
 oc apply -f https://raw.githubusercontent.com/OpenShiftDemos/openshift-tasks/master/app-template.yaml
 

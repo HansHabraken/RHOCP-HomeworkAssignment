@@ -230,8 +230,8 @@ infranode2.$GUID.internal openshift_hostname=infranode2.$GUID.internal  openshif
 ## These are regular nodes
 node1.$GUID.internal openshift_hostname=node1.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID'}"
 node2.$GUID.internal openshift_hostname=node2.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID'}"
-node3.$GUID.internal openshift_hostname=node3.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID', 'client': 'beta'}"
-node4.$GUID.internal openshift_hostname=node4.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID', 'client': 'alpha' }"
+node3.$GUID.internal openshift_hostname=node3.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID'}"
+node4.$GUID.internal openshift_hostname=node4.$GUID.internal  openshift_node_labels="{'env':'app', 'cluster': '$GUID'}"
 
 
 [nfs]
