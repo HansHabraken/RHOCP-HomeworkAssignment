@@ -63,7 +63,6 @@ oc new-app nodejs-mongo-persistent
 #CI/CD - pipeline#
 # Create tasks-dev tasks-test tasks-prod projects
 oc new-project cicd-dev --description="pizza" --display-name="cicd-dev"
-
 oc new-app jenkins-persistent -p ENABLE_OAUTH=false -e JENKINS_PASSWORD=1234 -n cicd-dev
 
 oc new-project tasks-dev --description="Development Environment" --display-name="Tasks - Dev"
@@ -89,15 +88,34 @@ oc apply -f https://raw.githubusercontent.com/OpenShiftDemos/openshift-tasks/mas
 oc project tasks-build
 oc new-app openshift-tasks
 
+# Check if jenkins is ready
+bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done'
+
 # Setup buildconfig for tasks
 oc project cicd-dev
-oc apply -f ./scripts/tasks-bc.yaml
+oc apply -f ./scripts/tasks-bc.yaml -n cicd-dev
+oc start-build tasks-bc -n cicd-dev
+
+# Wait till project is deployed in tasks-dev namespace
+bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-build.apps.be9e.example.opentlc.com/)" != "200" ]]; do sleep 5; done'
+
+# Add autoscaling on tasks-dev namespace
+oc set resources dc tasks --requests=cpu=100m -n tasks-prod
+#Add autoscaling template
+#oc autoscale dc/tasks --min 1 --max 10 --cpu-percent=80 -n tasks-prod
 
 
-# Add autoscaling on tasks-dev namespace (doesn't work yet)
-#oc project tasks-prod
-#oc autoscale dc/tasks --min 1 --max 10 --cpu-percent=80
-#oc create -f scripts/limitRange.yaml -n tasks-prod
+# Create users for Alpha and Beta clients
+ansible masters -m shell -a "sh scripts/add_user.sh"
 
-# Apply limitRange
-#oc rollout latest tasks -n tasks-prod
+# Create groups, add user to group, add labels to groups
+ansible master -m shell -a "ss scripts/create_groups.sh"
+
+# Setup env for alpha and beta users
+oc new-project alphacorp --node-selector='client=alpha'
+oc label alphacorp client=alpha
+oc adm policy add-role-to-group edit alphacorp -n alphacorp
+
+oc new-project bestacorp --node-selector='client=beta'
+oc label betacorp client=beta
+oc adm policy add-role-to-group edit betacorp -n betacorp
