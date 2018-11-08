@@ -105,37 +105,46 @@ oc apply -f https://raw.githubusercontent.com/OpenShiftDemos/openshift-tasks/mas
 #oc projeect openshift
 #oc apply -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap64-image-stream.json
 
-# Deploy app on dev environment
+# Deploy app on build environment
+echo "Deploy openshift-tasks on build env"
 oc project tasks-build
 oc new-app openshift-tasks
 
 # Check if jenkins is ready
+echo "Check: jenkins ready"
 while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done
 
 # Setup buildconfig for tasks
+echo "Setup buildconfig"
 oc project cicd-dev
 oc apply -f ./scripts/tasks-bc.yaml -n cicd-dev
 oc start-build tasks-bc -n cicd-dev
 
 # Wait till project is deployed in tasks-dev namespace
+echo "Check: app is deployed"
 while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-build.apps.be9e.example.opentlc.com/)" != "200" ]]; do sleep 5; done
 
 # Add autoscaling on tasks-dev namespace
+echo "Add autoscaling"
 oc set resources dc tasks --requests=cpu=100m -n tasks-prod
 oc create -f scripts/tasks-hpa.yaml
 
 # Create users for Alpha and Beta clients
+echo "Create users"
 ansible localhost -m shell -a "sh scripts/add_users.sh"
 
 # Create groups, add user to group, add labels to groups
+echo "Create groups"
 ansible localhost -a "sh scripts/create_groups.sh"
 
 # Label nodes
+echo "Label nodes"
 oc label node node1.$GUID.internal client=alpha
 oc label node node2.$GUID.internal client=beta
 oc label node node3.$GUID.internal client=common
 
 # Setup env for alpha and beta users
+echo "Setup env for alpha and beta users"
 oc adm new-project alphacorp-project --node-selector="client=alpha"
 oc adm policy add-role-to-group edit alphacorp -n alphacorp
 
