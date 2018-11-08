@@ -89,7 +89,7 @@ oc project tasks-build
 oc new-app openshift-tasks
 
 # Check if jenkins is ready
-bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done'
+while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done
 
 # Setup buildconfig for tasks
 oc project cicd-dev
@@ -97,7 +97,7 @@ oc apply -f ./scripts/tasks-bc.yaml -n cicd-dev
 oc start-build tasks-bc -n cicd-dev
 
 # Wait till project is deployed in tasks-dev namespace
-bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-build.apps.be9e.example.opentlc.com/)" != "200" ]]; do sleep 5; done'
+while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-build.apps.be9e.example.opentlc.com/)" != "200" ]]; do sleep 5; done
 
 # Add autoscaling on tasks-dev namespace
 oc set resources dc tasks --requests=cpu=100m -n tasks-prod
