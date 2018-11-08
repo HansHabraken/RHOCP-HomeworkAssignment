@@ -68,6 +68,16 @@ echo "Creating admin user"
 ansible masters -b -a 'htpasswd -c -b /etc/origin/master/htpasswd admin 1234'
 oc adm policy add-cluster-role-to-user cluster-admin admin
 
+# Apply new project template
+echo "Apply new project template"
+oc apply -f scripts/project_template.yaml
+
+# Restart services
+echo "Restart services"
+ansible master -a "systemctl restart atomic-openshift-master-api"
+ansible master -a "systemctl restart atomic-openshift-master-controllers"
+
+
 # Deploy test application
 echo 'Deploy test application'
 oc new-project nodejs-test --description="Nodejs Test Project" --display-name="nodejs-test"
@@ -110,9 +120,12 @@ echo "Deploy openshift-tasks on build env"
 oc project tasks-build
 oc new-app openshift-tasks
 
+#echo "export GUID"
+#export GUID=`hostname | cut -d"." -f2`
+
 # Check if jenkins is ready
-echo "Check: jenkins ready"
-while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done
+#echo "Check: jenkins ready"
+#while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done
 
 # Setup buildconfig for tasks
 echo "Setup buildconfig"
@@ -120,9 +133,12 @@ oc project cicd-dev
 oc apply -f ./scripts/tasks-bc.yaml -n cicd-dev
 oc start-build tasks-bc -n cicd-dev
 
+echo "export GUID"
+export GUID=`hostname | cut -d"." -f2`
+
 # Wait till project is deployed in tasks-dev namespace
 echo "Check: app is deployed"
-while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-build.apps.be9e.example.opentlc.com/)" != "200" ]]; do sleep 5; done
+while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-prod.apps.$GUID.example.opentlc.com)" != "200" ]]; do sleep 5; done
 
 # Add autoscaling on tasks-dev namespace
 echo "Add autoscaling"
@@ -150,3 +166,9 @@ oc adm policy add-role-to-group edit alphacorp -n alphacorp
 
 oc adm new-project betacorp-project --node-selector='client=beta'
 oc adm policy add-role-to-group edit betacorp -n betacorp
+
+# Modify master-config
+echo "Modify master-config"
+ansible masters -m shell -a "sed -i 's/projectRequestTemplate.*/projectRequestTemplate\: \"default\/project-request\"/g' /etc/origin/master/master-config.yaml"
+ansible masters -m shell -a'systemctl restart atomic-openshift-master-api'
+ansible masters -m shell -a'systemctl restart atomic-openshift-master-controllers'
