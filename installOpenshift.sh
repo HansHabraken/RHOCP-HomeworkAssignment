@@ -12,13 +12,14 @@ sed -i "s/\$GUID/${GUID}/g" ansible/hosts
 #Execute checks#
 ################
 echo 'Execute checks'
+
 # Validate that all hosts are reachable
 echo 'Check: ping'
 ansible all -m ping
 
 # Validate that docker is running
 echo 'Check: docker'
-ansible hosts -a "systemctl status docker | grep Active"
+ansible nodes -a "systemctl status docker | grep Active"
 echo 'Check: packages'
 ansible nodes -m yum -a 'list=atomic-openshift-node'
 
@@ -74,8 +75,8 @@ oc apply -f scripts/project_template.yaml
 
 # Restart services
 echo "Restart services"
-ansible master -a "systemctl restart atomic-openshift-master-api"
-ansible master -a "systemctl restart atomic-openshift-master-controllers"
+ansible masters -a "systemctl restart atomic-openshift-master-api"
+ansible masters -a "systemctl restart atomic-openshift-master-controllers"
 
 
 # Deploy test application
@@ -112,20 +113,21 @@ oc project openshift
 oc apply -f https://raw.githubusercontent.com/OpenShiftDemos/openshift-tasks/master/app-template.yaml
 
 # Create necessary imange stream
-#oc projeect openshift
-#oc apply -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap64-image-stream.json
+oc projeect openshift
+oc apply -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap64-image-stream.json
 
 # Deploy app on build environment
 echo "Deploy openshift-tasks on build env"
 oc project tasks-build
 oc new-app openshift-tasks
 
-#echo "export GUID"
-#export GUID=`hostname | cut -d"." -f2`
+# Export GUID
+echo "export GUID"
+export GUID=`hostname | cut -d"." -f2`
 
 # Check if jenkins is ready
-#echo "Check: jenkins ready"
-#while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done
+echo "Check: jenkins ready"
+while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done
 
 # Setup buildconfig for tasks
 echo "Setup buildconfig"
@@ -133,17 +135,19 @@ oc project cicd-dev
 oc apply -f ./scripts/tasks-bc.yaml -n cicd-dev
 oc start-build tasks-bc -n cicd-dev
 
-echo "export GUID"
-export GUID=`hostname | cut -d"." -f2`
-
 # Wait till project is deployed in tasks-dev namespace
 echo "Check: app is deployed"
 while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-prod.apps.$GUID.example.opentlc.com)" != "200" ]]; do sleep 5; done
 
 # Add autoscaling on tasks-dev namespace
 echo "Add autoscaling"
+oc project tasks-prod
 oc set resources dc tasks --requests=cpu=100m -n tasks-prod
-oc create -f scripts/tasks-hpa.yaml
+oc create -f scripts/tasks-hpa.yaml -n tasks-prod
+
+############
+#Multitancy#
+############
 
 # Create users for Alpha and Beta clients
 echo "Create users"
@@ -162,10 +166,10 @@ oc label node node3.$GUID.internal client=common
 # Setup env for alpha and beta users
 echo "Setup env for alpha and beta users"
 oc adm new-project alphacorp-project --node-selector="client=alpha"
-oc adm policy add-role-to-group edit alphacorp -n alphacorp
+oc adm policy add-role-to-group edit alphacorp -n alphacorp-project
 
 oc adm new-project betacorp-project --node-selector='client=beta'
-oc adm policy add-role-to-group edit betacorp -n betacorp
+oc adm policy add-role-to-group edit betacorp -n betacorp-project
 
 # Modify master-config
 echo "Modify master-config"
