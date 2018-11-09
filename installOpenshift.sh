@@ -113,7 +113,7 @@ oc project openshift
 oc apply -f https://raw.githubusercontent.com/OpenShiftDemos/openshift-tasks/master/app-template.yaml
 
 # Create necessary imange stream
-oc projeect openshift
+oc project openshift
 oc apply -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap64-image-stream.json
 
 # Deploy app on build environment
@@ -125,9 +125,9 @@ oc new-app openshift-tasks
 echo "export GUID"
 export GUID=`hostname | cut -d"." -f2`
 
-# Check if jenkins is ready
-echo "Check: jenkins ready"
-while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done
+# Check if jenkins is ready (not working yet)
+#echo "Check: jenkins ready"
+#while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' jenkins-cicd-dev.apps.$GUID.example.opentlc.com)" != "302" ]]; do sleep 5; done
 
 # Setup buildconfig for tasks
 echo "Setup buildconfig"
@@ -135,7 +135,7 @@ oc project cicd-dev
 oc apply -f ./scripts/tasks-bc.yaml -n cicd-dev
 oc start-build tasks-bc -n cicd-dev
 
-# Wait till project is deployed in tasks-dev namespace
+# Wait till project is deployed in tasks-prod namespace
 echo "Check: app is deployed"
 while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-prod.apps.$GUID.example.opentlc.com)" != "200" ]]; do sleep 5; done
 
