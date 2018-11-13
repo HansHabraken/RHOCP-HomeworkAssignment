@@ -3,9 +3,11 @@ set -o errexit
 set -o nounset
 
 # Download git repository
+echo "Download git repo"
 git clone https://github.com/HansHabraken/RHOCP-HomeworkAssignment.git
 
 # Go to directory
+echo "Got to directory"
 cd RHOCP-HomeworkAssignment
 
 # Get GUID and export as GUID on all hosts

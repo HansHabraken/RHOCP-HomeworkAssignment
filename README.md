@@ -7,3 +7,4 @@ This repository installs and configures openshift 3.9 on the homework lab from o
 3. git clone https://github.com/HansHabraken/RHOCP-HomeworkAssignment.git
 4. cd RHOC-HomeworkAssigment
 5. ./installOpenshift.sh
+6. After the installation, you can login on de openshift web console as admin:1234
