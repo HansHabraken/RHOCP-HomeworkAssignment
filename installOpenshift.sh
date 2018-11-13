@@ -27,7 +27,7 @@ ansible all -m ping
 
 # Validate that docker is running
 echo 'Check: docker'
-ansible nodes -a "systemctl status docker | grep Active"
+ansible nodes -a "systemctl status docker"
 echo 'Check: packages'
 ansible nodes -m yum -a 'list=atomic-openshift-node'
 
