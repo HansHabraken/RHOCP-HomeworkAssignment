@@ -1,4 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -o errexit
+set -o nounset
+
+# Download git repository
+git clone https://github.com/HansHabraken/RHOCP-HomeworkAssignment.git
+
+# Go to directory
+cd RHOCP-HomeworkAssignment
 
 # Get GUID and export as GUID on all hosts
 echo "export GUID"
@@ -6,7 +14,7 @@ export GUID=`hostname | cut -d"." -f2`
 
 # Replace $GUID variable in hosts file with correct GUID
 echo 'Replace GUID'
-sed -i "s/\$GUID/${GUID}/g" ansible/hosts
+sed -i "s/\$GUID/${GUID}/g" ./hosts
 
 ################
 #Execute checks#
@@ -30,11 +38,11 @@ echo "Install openshift"
 
 # Execute prerequisites
 echo 'Execute prerequisistes'
-ansible-playbook -f 20 -i ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
+ansible-playbook -f 20 -i ./hosts /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
 
 # Install openshift openshift cluster
 echo 'Install openshift'
-ansible-playbook -f 20 -i ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
+ansible-playbook -f 20 -i ./hosts /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
 
 #####################
 #Configure Openshift#
@@ -71,7 +79,7 @@ oc adm policy add-cluster-role-to-user cluster-admin admin
 
 # Apply new project template
 echo "Apply new project template"
-oc apply -f scripts/project_template.yaml
+oc apply -f yaml-files/project_template.yaml
 
 # Restart services
 echo "Restart services"
@@ -132,7 +140,7 @@ export GUID=`hostname | cut -d"." -f2`
 # Setup buildconfig for tasks
 echo "Setup buildconfig"
 oc project cicd-dev
-oc apply -f ./scripts/tasks-bc.yaml -n cicd-dev
+oc apply -f ./yaml-files/tasks-bc.yaml -n cicd-dev
 oc start-build tasks-bc -n cicd-dev
 
 # Wait till project is deployed in tasks-prod namespace
@@ -143,7 +151,7 @@ while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://tasks-tasks-prod.app
 echo "Add autoscaling"
 oc project tasks-prod
 oc set resources dc tasks --requests=cpu=100m -n tasks-prod
-oc create -f scripts/tasks-hpa.yaml -n tasks-prod
+oc create -f yaml-files/tasks-hpa.yaml -n tasks-prod
 
 ############
 #Multitancy#
